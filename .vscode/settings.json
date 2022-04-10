@@ -1,0 +1,7 @@
+{
+    "editor.formatOnSave": true,
+    "clang-format.fallbackStyle": "Google",
+    "clang-format.style": "Google",
+    "clang-format.language.c.style": "Google",
+    "clang-format.language.cpp.style": "Google",
+}
