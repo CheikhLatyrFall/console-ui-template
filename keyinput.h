@@ -1,11 +1,3 @@
-/**
- * @author Latyr
- * @email lfall@sig-num.com
- * @create date 2020-01-30 12:39:31
- * @modify date 2020-01-30 12:39:31
- * @desc [description]
- */
-
 #ifndef _KEYINPUT_H
 #define _KEYINPUT_H
 

@@ -1,12 +1,3 @@
-/**
- * @author Latyr
- * @email lfall@sig-num.com
- * @create date 2020-01-30 12:39:27
- * @modify date 2020-01-30 12:39:27
- * @desc [description]
- */
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -48,7 +39,7 @@ static int kbhit()
 static int getch()
 {
     int r;
-    unsigned char c;
+    unsigned char c = 0;
     if ((r = read(0, &c, sizeof(c))) < 0) {
         return r;
     } else {

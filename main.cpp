@@ -1,12 +1,7 @@
-//#include <iostream>
-//#include <fstream>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-//#include <chrono>
-//#include <thread>
 #include <string.h>
-//#include <ctime>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -59,12 +54,14 @@ menuEntry_t appMenu[NB_APP_MENU][MAX_NB_MENU_ENTRIES] = {
 };
 
 int function1(void* in, void* out) {
-  fprintf(stdout, "function 1 executed\n");
+  fprintf(stdout, "\rfunction 1: in = %f\n", in ? *((float*)in) : 0.0);
+  *((float*)out) = 100.0;
+  fprintf(stdout, "\rfunction 1 executed\n");
   return 0;
 }
 
 int function2(void* in, void* out) {
-  fprintf(stdout, "function 2 executed\n");
+  fprintf(stdout, "\rfunction 2 executed\n");
   return 0;
 }
 
@@ -108,8 +105,8 @@ static bool requestUserConfirm (){
 }
 
 /**
- * @brief Get the Command object
- * @param car 
+ * @brief parseUserCommand
+ * @param ch 
  * @param currAppMenu 
  * @return appCmd_t 
  */
@@ -144,6 +141,11 @@ static appCmd_t parseUserCommand (char ch, appMenu_t currAppMenu)
     return currUserCmd;
 }
 
+
+/**
+ * @brief showMenu
+ * @param currAppMenu 
+ */
 static void showMenu (appMenu_t currAppMenu)
 {
     switch (currAppMenu)
@@ -168,50 +170,73 @@ static void showMenu (appMenu_t currAppMenu)
     }
 }
 
+/**
+ * @brief readUserInput
+ * @param currAppMenu 
+ * @param currUserCmd 
+ * @param input_value 
+ * @param doConfirm 
+ * @return int 
+ */
 static int readUserInput (appMenu_t currAppMenu, appCmd_t currUserCmd, float *input_value, bool doConfirm)
 {
     fprintf(stdout, "\ruser input: \n");
     scanf("%f", input_value);
-    if (currUserCmd) requireConfirm = true;
+    if (currUserCmd != APP_CMD_UNKNOWN) requireConfirm = true;
     if (doConfirm)
         if (!requestUserConfirm())
             return -EXIT_FAILURE;
     return EXIT_SUCCESS;
 }
 
-appMenu_t processUserCommand(appCmd_t currUserCmd, int currUserParam)
+/**
+ * @brief processUserCommand
+ * @param currUserCmd 
+ * @param currUserParam 
+ * @return appMenu_t 
+ */
+appMenu_t processUserCommand(appCmd_t currUserCmd, float currUserParam)
 {
-    int res = 0;
     appMenu_t nextAppMenu = APP_MENU_HOME;
     if (currUserCmd >= APP_CMD_MAX) {
       fprintf(stdout, "\rInvalid user command\n");
       return nextAppMenu;
     }
-    fprintf(stdout, "\rmenuFuncs[%d] = %s\n", currUserCmd, menuFuncs[currUserCmd].FuncName);
-    if (!menuFuncs[currUserCmd].Func)
-        menuFuncs[currUserCmd].Func(NULL, NULL);
+    float result = 0.0;
+    if (menuFuncs[currUserCmd].Func) menuFuncs[currUserCmd].Func(&currUserParam, &result);
+    fprintf(stdout, "\rmenuFuncs[%d] = %s, param = %f, result = %f\n", currUserCmd, menuFuncs[currUserCmd].FuncName, currUserParam, result);
     return nextAppMenu;
 }
 
-void run ()
+void console_ui ()
 {
     int ch = 0;
     appMenu_t currAppMenu = APP_MENU_HOME;
     showMenu(currAppMenu);
     while (ch != 'x' && ch != 'X') {
+        //update menu
         usleep(5e5);
         showMenu(currAppMenu);
+        
+        //read keyboard
         ch = keyinput_kbhit (); 
         if (ch != 0) printf("\rkey pressed == %c\n", (unsigned char)ch);
         else continue;
+
+        //process user keyboard hit
         appCmd_t currUserCmd = parseUserCommand (ch, currAppMenu);
         if (currUserCmd == APP_CMD_UNKNOWN || currUserCmd >= APP_CMD_MAX)
           continue;
+
+        //request command param from user + confirmation
         float currUserParam = 0.0;
         if (readUserInput(currAppMenu, currUserCmd, &currUserParam, requireConfirm)) continue;
         fprintf(stdout, "\ruser input = %f\n", currUserParam);
+
+        //process user command with input param
         currAppMenu = processUserCommand(currUserCmd, currUserParam);
-        ch = 0;
+
+        //delay
         usleep(2e6);
     }
     doRun = false;
@@ -219,11 +244,15 @@ void run ()
 
 int main ()
 {
+    //init custom terminal mode
     if (!keyinput_init()) {
         printf("\rFailed to init keyread\n");
         return -EXIT_FAILURE;
     }
-    run();
+
+    //run console UI
+    console_ui();
+
     appExit((appMenu_t)0);
     return 0;
 }
